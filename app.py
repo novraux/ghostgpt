@@ -1,16 +1,20 @@
 from contextlib import asynccontextmanager
 import uuid
-from fastapi import FastAPI,Response, Cookie
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Response, Cookie
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from patchright.async_api import Page
 from pydantic import BaseModel
-from browser import  start_browser,create_new_page
+from browser import start_browser, create_new_page
 from lib.chatgpt import chatgpt_handle_response, stream_chatgpt_response
+
 # browser = None
 playwright = None
 context = None
 page = None
 active_sessions: dict[str, Page] = {}
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global playwright, context, page
@@ -18,19 +22,35 @@ async def lifespan(app: FastAPI):
     yield
     await context.close()
     await playwright.stop()
+
 app = FastAPI(lifespan=lifespan)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return FileResponse("static/index.html", media_type="text/html")
+
 class QuestionRequest(BaseModel):
     question: str
     newContext: bool | None = False
+
 @app.post("/ask")
-async def ask_question(data: QuestionRequest,response: Response,user_session_id:str | None = Cookie(default=None)):
+async def ask_question(data: QuestionRequest, response: Response, user_session_id: str | None = Cookie(default=None)):
     question = data.question
-    if(not question):
+    if not question:
         return {"error": "Question is required"}
-    page = await handle_user_session(user_session_id,data.newContext,response)
+    page = await handle_user_session(user_session_id, data.newContext, response)
     content = await chatgpt_handle_response(page, context, question)
     if data.newContext:
         await page.close()
@@ -48,14 +68,14 @@ async def stream_ask(data: QuestionRequest, response: Response, user_session_id:
     )
 
 
-async def handle_user_session(user_session_id: str | None,newContext: bool, response: Response):
-      if(not newContext):
-            if user_session_id is None or user_session_id not in active_sessions:
-                user_session_id = str(uuid.uuid4())
-                response.set_cookie(key="user_session_id", value=user_session_id, max_age=3600)
-                new_page = await create_new_page(context)
-                active_sessions[user_session_id] = new_page
-            page = active_sessions[user_session_id]
-      else:
-            page = await create_new_page(context)
-      return page
+async def handle_user_session(user_session_id: str | None, newContext: bool, response: Response):
+    if not newContext:
+        if user_session_id is None or user_session_id not in active_sessions:
+            user_session_id = str(uuid.uuid4())
+            response.set_cookie(key="user_session_id", value=user_session_id, max_age=3600)
+            new_page = await create_new_page(context)
+            active_sessions[user_session_id] = new_page
+        page = active_sessions[user_session_id]
+    else:
+        page = await create_new_page(context)
+    return page
