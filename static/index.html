@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostGPT - Multi-LLM Chat</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>👻 GhostGPT</h1>
+                <p>Multi-LLM Chat Interface</p>
+            </div>
+            
+            <div class="service-selector">
+                <label for="llm-select">Select LLM:</label>
+                <select id="llm-select">
+                    <option value="chatgpt">ChatGPT</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="qwen">Alibaba Qwen</option>
+                </select>
+            </div>
+
+            <div class="options">
+                <label>
+                    <input type="checkbox" id="new-context" />
+                    New Context (Fresh Session)
+                </label>
+            </div>
+
+            <button id="clear-chat" class="clear-btn">Clear Chat</button>
+            <button id="new-chat" class="new-chat-btn">New Chat</button>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2 id="service-name">ChatGPT</h2>
+                <span id="session-status" class="session-status">Ready</span>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="welcome-message">
+                    <h3>Welcome to GhostGPT 👻</h3>
+                    <p>Select an LLM and start chatting!</p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="prompt-input" 
+                        placeholder="Ask me anything..." 
+                        rows="3"
+                    ></textarea>
+                    <button id="send-btn" class="send-btn">
+                        <span>Send</span>
+                        <span class="spinner" id="spinner"></span>
+                    </button>
+                </div>
+                <div class="input-footer">
+                    <label>
+                        <input type="radio" name="response-mode" value="standard" checked />
+                        Standard Response
+                    </label>
+                    <label>
+                        <input type="radio" name="response-mode" value="stream" />
+                        Stream Response
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
